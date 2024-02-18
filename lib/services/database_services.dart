@@ -24,4 +24,12 @@ class DatabaseService {
   void addMatches(Matches matches) async {
     _matchRef.add(matches);
   }
+
+  void updateMatches(String matchId, Matches matches) {
+    _matchRef.doc(matchId).update(matches.toJson());
+  }
+
+  void deleteMatches(String matchId) {
+    _matchRef.doc(matchId).delete();
+  }
 }

@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:uasmobile2/models/match.dart';
 import 'package:uasmobile2/services/database_services.dart';
@@ -10,6 +11,11 @@ class ListScreen extends StatefulWidget {
 }
 
 class _ListScreenState extends State<ListScreen> {
+  final TextEditingController _textEditingControllerMatch =
+      TextEditingController();
+  final TextEditingController _textEditingControllerScore =
+      TextEditingController();
+
   final DatabaseService _databaseService = DatabaseService();
 
   @override
@@ -17,6 +23,14 @@ class _ListScreenState extends State<ListScreen> {
     return Scaffold(
       resizeToAvoidBottomInset: false,
       body: _buildUI(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _displayTextInputDialog,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: const Icon(
+          Icons.add,
+          color: Colors.white,
+        ),
+      ),
     );
   }
 
@@ -54,11 +68,63 @@ class _ListScreenState extends State<ListScreen> {
                     tileColor: Theme.of(context).colorScheme.primaryContainer,
                     title: Text(match.match),
                     subtitle: Text(match.score),
+                    trailing: Checkbox(
+                      value: match.isDone,
+                      onChanged: (value) {
+                        Matches updatedMatches =
+                            match.copyWith(isDone: !match.isDone);
+                        _databaseService.updateMatches(matchId, updatedMatches);
+                      },
+                    ),
+                    onLongPress: () {
+                      _databaseService.deleteMatches(matchId);
+                    },
                   ),
                 );
               },
             );
           }),
     );
+  }
+
+  void _displayTextInputDialog() async {
+    return showDialog(
+        context: context,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text('Add a Match'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _textEditingControllerMatch,
+                  decoration: const InputDecoration(hintText: "Match...."),
+                ),
+                TextField(
+                  controller: _textEditingControllerScore,
+                  decoration: const InputDecoration(hintText: "Score...."),
+                ),
+              ],
+            ),
+            actions: <Widget>[
+              MaterialButton(
+                color: Theme.of(context).colorScheme.primary,
+                textColor: Colors.white,
+                child: const Text('OK'),
+                onPressed: () {
+                  Matches matches = Matches(
+                      match: _textEditingControllerMatch.text,
+                      score: _textEditingControllerScore.text,
+                      isDone: false,
+                      date: Timestamp.now());
+                  _databaseService.addMatches(matches);
+                  Navigator.pop(context);
+                  _textEditingControllerMatch.clear();
+                  _textEditingControllerScore.clear();
+                },
+              ),
+            ],
+          );
+        });
   }
 }
